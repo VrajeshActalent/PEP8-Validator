@@ -2,38 +2,46 @@ import subprocess
 import pandas as pd
 import os
 
+EXCLUDE_DIRS = ["PEP8_VALIDATOR", ".git", "__pycache__"]
+
 excel_file = "pylint_multi_report.xlsx"
 
 with pd.ExcelWriter(excel_file, engine="openpyxl") as writer:
-    
+
     for folder in os.listdir("."):
-        for file in files:
-            if file.endswith(".py"):
 
-                file_path = os.path.join(root, file)
+        # only process directories and skip unwanted ones
+        if os.path.isdir(folder) and folder not in EXCLUDE_DIRS:
 
-                result = subprocess.run(
-                    ["python", "-m", "pylint", file_path],
-                    capture_output=True,
-                    text=True
-                )
+            for root, dirs, files in os.walk(folder):
 
-                violations = []
+                for file in files:
+                    if file.endswith(".py"):
 
-                for line in result.stdout.splitlines():
-                    violations.append({"Violation": line})
+                        file_path = os.path.join(root, file)
 
-                if not violations:
-                    violations.append({"Violation": "No issues found"})
+                        result = subprocess.run(
+                            ["python", "-m", "pylint", file_path],
+                            capture_output=True,
+                            text=True
+                        )
 
-                df = pd.DataFrame(violations)
+                        violations = []
 
-                sheet_name = file.replace(".py", "")[:31]
+                        for line in result.stdout.splitlines():
+                            violations.append({"Violation": line})
 
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
+                        if not violations:
+                            violations.append({"Violation": "No issues found"})
+
+                        df = pd.DataFrame(violations)
+
+                        sheet_name = f"{folder}_{file.replace('.py','')}"[:31]
+
+                        df.to_excel(writer, sheet_name=sheet_name, index=False)
 
 # save report name
 with open("report_name.txt", "w") as f:
     f.write(excel_file)
 
-print("Multi-file report generated")
+print("Multi-repo report generated successfully")
