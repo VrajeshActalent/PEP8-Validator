@@ -4,44 +4,62 @@ import os
 
 EXCLUDE_DIRS = ["PEP8_VALIDATOR", ".git", "__pycache__"]
 
-excel_file = "pylint_multi_report.xlsx"
+# read changed files
+with open("changed_files.txt", "r") as f:
+    changed_files = f.read().splitlines()
 
-with pd.ExcelWriter(excel_file, engine="openpyxl") as writer:
+# filter only .py files
+changed_py_files = [f for f in changed_files if f.endswith(".py")]
 
-    for folder in os.listdir("."):
+if not changed_py_files:
+    print("No Python changes detected. Skipping report generation.")
+    exit(0)
 
-        # only process directories and skip unwanted ones
-        if os.path.isdir(folder) and folder not in EXCLUDE_DIRS:
+# group files by repo (top folder)
+repo_files = {}
 
-            for root, dirs, files in os.walk(folder):
+for file in changed_py_files:
+    parts = file.split(os.sep)
+    
+    if len(parts) > 1:
+        repo = parts[0]
+        repo_files.setdefault(repo, []).append(file)
 
-                for file in files:
-                    if file.endswith(".py"):
+# process each repo separately
+for repo, files in repo_files.items():
 
-                        file_path = os.path.join(root, file)
+    excel_file = f"{repo}_PEP8.xlsx"
 
-                        result = subprocess.run(
-                            ["python", "-m", "pylint", file_path],
-                            capture_output=True,
-                            text=True
-                        )
+    with pd.ExcelWriter(excel_file, engine="openpyxl") as writer:
 
-                        violations = []
+        for file_path in files:
 
-                        for line in result.stdout.splitlines():
-                            violations.append({"Violation": line})
+            if not os.path.exists(file_path):
+                continue
 
-                        if not violations:
-                            violations.append({"Violation": "No issues found"})
+            result = subprocess.run(
+                ["python", "-m", "pylint", file_path, "--score=no"],
+                capture_output=True,
+                text=True
+            )
 
-                        df = pd.DataFrame(violations)
+            violations = []
 
-                        sheet_name = f"{folder}_{file.replace('.py','')}"[:31]
+            for line in result.stdout.splitlines():
+                violations.append({"Violation": line})
 
-                        df.to_excel(writer, sheet_name=sheet_name, index=False)
+            if not violations:
+                violations.append({"Violation": "No issues found"})
 
-# save report name
+            df = pd.DataFrame(violations)
+
+            sheet_name = os.path.basename(file_path).replace(".py", "")[:31]
+
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+    print(f"{excel_file} generated")
+
+# save all report names
 with open("report_name.txt", "w") as f:
-    f.write(excel_file)
-
-print("Multi-repo report generated successfully")
+    for repo in repo_files.keys():
+        f.write(f"{repo}_PEP8.xlsx\n")
