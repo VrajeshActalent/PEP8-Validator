@@ -11,9 +11,13 @@ jobs:
       - name: Checkout Validator Repo
         uses: actions/checkout@v4
 
-      - name: Clone Target Repo
+      - name: Clone Target Repo 1
         run: |
           git clone https://github.com/VrajeshActalent/UTC_Helper.git
+
+      - name: Clone Target Repo 2
+        run: |
+          git clone https://github.com/VrajeshActalent/SpellChecker.git
 
       - name: Install Dependencies
         run: |
