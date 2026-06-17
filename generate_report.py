@@ -19,12 +19,15 @@ if not changed_py_files:
 repo_files = {}
 
 for file in changed_py_files:
-    
-    # detect which repo the file belongs to
+
     for repo in os.listdir("."):
-        if os.path.isdir(repo) and os.path.exists(os.path.join(repo, file)):
+
+        if os.path.isdir(repo) and repo not in EXCLUDE_DIRS:
+
             full_path = os.path.join(repo, file)
-            repo_files.setdefault(repo, []).append(full_path)
+
+            if os.path.exists(full_path):
+                repo_files.setdefault(repo, []).append(full_path)
 
 # process each repo separately
 for repo, files in repo_files.items():
