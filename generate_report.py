@@ -5,10 +5,8 @@ import os
 excel_file = "pylint_multi_report.xlsx"
 
 with pd.ExcelWriter(excel_file, engine="openpyxl") as writer:
-
-    TARGET_DIR = "UTC_Helper"   # Target directory
     
-    for root, dirs, files in os.walk(TARGET_DIR):
+    for folder in os.listdir("."):
         for file in files:
             if file.endswith(".py"):
 
