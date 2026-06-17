@@ -2,7 +2,6 @@ import subprocess
 import pandas as pd
 import os
 
-EXCLUDE_DIRS = ["PEP8_VALIDATOR", ".git", "__pycache__"]
 
 # read changed files
 with open("changed_files.txt", "r") as f:
