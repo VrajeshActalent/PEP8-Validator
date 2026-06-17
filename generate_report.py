@@ -1,36 +1,39 @@
 import subprocess
 import pandas as pd
+import os
 
-file_to_check = "backup.py"
+excel_file = "pylint_multi_report.xlsx"
 
-result = subprocess.run(
-    ["python", "-m", "pylint", file_to_check],
-    capture_output=True,
-    text=True
-)
+with pd.ExcelWriter(excel_file, engine="openpyxl") as writer:
 
-violations = []
+    for root, dirs, files in os.walk("."):
+        for file in files:
+            if file.endswith(".py"):
 
-for line in result.stdout.splitlines():
-    violations.append({
-        "Violation": line
-    })
+                file_path = os.path.join(root, file)
 
-if not violations:
-    violations.append({
-        "Violation": "No PEP8 violations found"
-    })
+                result = subprocess.run(
+                    ["python", "-m", "pylint", file_path],
+                    capture_output=True,
+                    text=True
+                )
 
-df = pd.DataFrame(violations)
+                violations = []
 
-report_name = file_to_check.split(".")[0] + "_report.xlsx"
+                for line in result.stdout.splitlines():
+                    violations.append({"Violation": line})
 
-df.to_excel(
-    report_name,
-    index=False
-)
+                if not violations:
+                    violations.append({"Violation": "No issues found"})
 
+                df = pd.DataFrame(violations)
+
+                sheet_name = file.replace(".py", "")[:31]
+
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+# save report name
 with open("report_name.txt", "w") as f:
-    f.write(report_name)
-    
-print("PEP8 report generated successfully")
+    f.write(excel_file)
+
+print("Multi-file report generated")
