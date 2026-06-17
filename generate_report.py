@@ -2,9 +2,6 @@ import subprocess
 import pandas as pd
 import os
 
-# Optional: define known target repos (better than scanning everything)
-TARGET_REPOS = ["UTC_Helper", "SpellChecker"]
-
 # read changed files
 with open("changed_files.txt", "r") as f:
     changed_files = f.read().splitlines()
@@ -16,54 +13,35 @@ if not changed_py_files:
     print("No Python changes detected. Skipping report generation.")
     exit(0)
 
-# group files by repo
-repo_files = {}
+# get repo name dynamically
+repo_name = os.getcwd().split("/")[-1]
+excel_file = f"{repo_name}_PEP8.xlsx"
 
-for file in changed_py_files:
-    for repo in TARGET_REPOS:
+with pd.ExcelWriter(excel_file, engine="openpyxl") as writer:
 
-        full_path = os.path.join(repo, file)
+    for file_path in changed_py_files:
 
-        if os.path.exists(full_path):
-            repo_files.setdefault(repo, [])
+        if not os.path.exists(file_path):
+            continue
 
-            # avoid duplicates
-            if full_path not in repo_files[repo]:
-                repo_files[repo].append(full_path)
+        result = subprocess.run(
+            ["python", "-m", "pylint", file_path, "--score=no"],
+            capture_output=True,
+            text=True
+        )
 
-# process each repo separately
-for repo, files in repo_files.items():
+        violations = []
 
-    excel_file = f"{repo}_PEP8.xlsx"
+        for line in result.stdout.splitlines():
+            violations.append({"Violation": line})
 
-    with pd.ExcelWriter(excel_file, engine="openpyxl") as writer:
+        if not violations:
+            violations.append({"Violation": "No issues found"})
 
-        for file_path in files:
+        df = pd.DataFrame(violations)
 
-            result = subprocess.run(
-                ["python", "-m", "pylint", file_path, "--score=no"],
-                capture_output=True,
-                text=True
-            )
+        sheet_name = os.path.basename(file_path).replace(".py", "")[:31]
 
-            violations = []
+        df.to_excel(writer, sheet_name=sheet_name, index=False)
 
-            for line in result.stdout.splitlines():
-                violations.append({"Violation": line})
-
-            if not violations:
-                violations.append({"Violation": "No issues found"})
-
-            df = pd.DataFrame(violations)
-
-            # unique + safe sheet name
-            sheet_name = f"{os.path.basename(file_path).replace('.py','')}"[:31]
-
-            df.to_excel(writer, sheet_name=sheet_name, index=False)
-
-    print(f"{excel_file} generated")
-
-# save all report names (optional, not needed for your current YAML)
-with open("report_name.txt", "w") as f:
-    for repo in repo_files.keys():
-        f.write(f"{repo}_PEP8.xlsx\n")
+print(f"{excel_file} generated")
