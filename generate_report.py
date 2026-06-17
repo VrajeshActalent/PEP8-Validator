@@ -57,7 +57,7 @@ for repo, files in repo_files.items():
 
             df = pd.DataFrame(violations)
 
-            sheet_name = os.path.basename(file_path).replace(".py", "")[:31]
+            sheet_name = f"{repo}_{os.path.basename(file_path).replace('.py','')}"[:31]
 
             df.to_excel(writer, sheet_name=sheet_name, index=False)
 
