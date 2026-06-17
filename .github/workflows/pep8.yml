@@ -23,9 +23,17 @@ jobs:
         run: |
           pip install pylint pandas openpyxl
 
-      - name: Get Changed Files
+      - name: Get Changed Files from Target Repos
         run: |
-          git diff --name-only HEAD~1 HEAD > changed_files.txt || git ls-files > changed_files.txt
+          > changed_files.txt
+
+          cd UTC_Helper
+          git diff --name-only HEAD~1 HEAD >> ../changed_files.txt || git ls-files >> ../changed_files.txt
+          cd ..
+
+          cd SpellChecker
+          git diff --name-only HEAD~1 HEAD >> ../changed_files.txt || git ls-files >> ../changed_files.txt
+          cd ..
           
       - name: Run Validation
         run: |
