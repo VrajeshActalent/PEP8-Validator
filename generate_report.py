@@ -21,12 +21,10 @@ for file in changed_py_files:
 
     for repo in os.listdir("."):
 
-        if os.path.isdir(repo) and repo not in EXCLUDE_DIRS:
+        full_path = os.path.join(repo, file)
 
-            full_path = os.path.join(repo, file)
-
-            if os.path.exists(full_path):
-                repo_files.setdefault(repo, []).append(full_path)
+        if os.path.exists(full_path):
+            repo_files.setdefault(repo, []).append(full_path)
 
 # process each repo separately
 for repo, files in repo_files.items():
