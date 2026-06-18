@@ -25,7 +25,7 @@ with pd.ExcelWriter(excel_file, engine="openpyxl") as writer:
             continue
 
         result = subprocess.run(
-            ["python", "-m", "pylint", file_path, "--score=no"],
+            ["python", "-m", "pylint", file_path],
             capture_output=True,
             text=True
         )
